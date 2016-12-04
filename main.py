@@ -25,6 +25,14 @@ DISKSIZE_USED = Gauge('smartos_disksize_used', 'Used disk size', ['device', 'mou
 DISKSIZE_FREE = Gauge('smartos_disksize_free', 'Free disk size', ['device', 'mountpoint', 'fstype'])
 DISK_READCOUNT = Gauge('smartos_disk_readcount', 'Disk read count', ['disk'])
 DISK_WRITECOUNT = Gauge('smartos_disk_writecount', 'Disk write count', ['disk'])
+NET_BYTES_SEND = Gauge('smartos_net_bytes_send', 'Bytes sended', ['nic'])
+NET_BYTES_RECV = Gauge('smartos_net_bytes_recv', 'Bytes recieved', ['nic'])
+NET_PKT_SEND = Gauge('smartos_net_pkt_send', 'Packets sended', ['nic'])
+NET_PKT_RECV = Gauge('smartos_net_pkt_recv', 'Packets recieved', ['nic'])
+NET_ERRIN = Gauge('smartos_net_errin', 'Input errors', ['nic'])
+NET_ERROUT = Gauge('smartos_net_errout', 'Output errors', ['nic'])
+NET_DROPIN = Gauge('smartos_net_dropin', 'Input dropped packets', ['nic'])
+NET_DROPOUT = Gauge('smartos_net_dropout', 'Output dropped packets', ['nic'])
 
 # Decorate function with metric.
 @REQUEST_TIME.time()
@@ -70,6 +78,17 @@ def disk_stat():
         DISK_READCOUNT.labels(disk = disk).set(diskstat.read_count)
         DISK_WRITECOUNT.labels(disk = disk).set(diskstat.write_count)
 
+def net_stat():
+    for nic, nicstat in psutil.net_io_counters(pernic=True).iteritems():
+        NET_BYTES_SEND.labels(nic = nic).set(nicstat.bytes_sent)
+        NET_BYTES_RECV.labels(nic = nic).set(nicstat.bytes_recv)
+        NET_PKT_SEND.labels(nic = nic).set(nicstat.packets_sent)
+        NET_PKT_RECV.labels(nic = nic).set(nicstat.packets_recv)
+        NET_ERRIN.labels(nic = nic).set(nicstat.errin)
+        NET_ERROUT.labels(nic = nic).set(nicstat.errout)
+        NET_DROPIN.labels(nic = nic).set(nicstat.dropin)
+        NET_DROPOUT.labels(nic = nic).set(nicstat.dropout)
+
 
 if __name__ == '__main__':
     # Start up the server to expose the metrics.
@@ -83,4 +102,5 @@ if __name__ == '__main__':
         cpu_stat()
         disksize_usage()
         disk_stat()
+        net_stat()
         time.sleep(1)
