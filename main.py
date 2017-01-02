@@ -2,6 +2,8 @@ from prometheus_client import start_http_server, Summary, Counter, Gauge
 import random
 import time
 import psutil
+import sys
+import socket
 
 # Create a metric to track time spent and requests made.
 REQUEST_TIME = Summary('request_processing_seconds', 'Time spent processing request')
@@ -89,10 +91,24 @@ def net_stat():
         NET_DROPIN.labels(nic = nic).set(nicstat.dropin)
         NET_DROPOUT.labels(nic = nic).set(nicstat.dropout)
 
+def set_listen_ip():
+    #set listen ip address
+    try:
+        listen_ip = sys.argv[1]
+    except:
+        listen_ip = '0.0.0.0'
+    try:
+        socket.inet_pton(socket.AF_INET,listen_ip)
+    except socket.error:
+        print '%s - ip address is invalid!' % listen_ip
+        sys.exit(1)
+    return listen_ip
 
-if __name__ == '__main__':
+
+def main():
+    listen_ip = set_listen_ip()
     # Start up the server to expose the metrics.
-    start_http_server(9100)
+    start_http_server(9100, listen_ip)
     # Generate some requests.
     while True:
         process_request()
@@ -104,3 +120,6 @@ if __name__ == '__main__':
         disk_stat()
         net_stat()
         time.sleep(1)
+
+if __name__ == '__main__':
+    main()
